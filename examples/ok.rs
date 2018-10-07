@@ -9,7 +9,6 @@
 extern crate cortex_m;
 #[macro_use(entry, exception)]
 extern crate cortex_m_rt as rt;
-#[macro_use(block)]
 extern crate nb;
 extern crate panic_semihosting;
 extern crate hm11;
@@ -24,6 +23,7 @@ use hal::serial::Serial;
 use hal::stm32l4::stm32l4x2;
 use rt::ExceptionFrame;
 use hm11::device::Hm11;
+use hm11::command::Command;
 
 entry!(main);
 
@@ -52,7 +52,8 @@ fn main() -> ! {
     let serial = Serial::usart1(p.USART1, (tx, rx), 9_600.bps(), clocks, &mut rcc.apb2);
     let (mut tx, mut rx) = serial.split();
 
-    Hm11::Test.send(&mut tx, &mut rx).unwrap();
+    let hm11 = Hm11::new();
+    hm11.command(Command::Test, &mut tx, &mut rx).unwrap();
 
 
     // if all goes well you should reach this breakpoint

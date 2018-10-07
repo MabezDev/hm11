@@ -5,6 +5,7 @@ authors = ["Scott Mabin <MabezDev@gmail.com>"]
 
 [dependencies]
 nb = "0.1.1"
+heapless = "0.3.7"
 
 [dependencies.embedded-hal]
 version = "0.2.1"
