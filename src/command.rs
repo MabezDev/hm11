@@ -25,6 +25,10 @@ pub enum Command<'a> {
     Baud230400,
     /// Test AT Response
     Test,
+    /// Disconnect from current bluetooth connection
+    Disconnect,
+    /// Restart the module
+    Reset,
     /// Discovery name
     SetName(&'a str),
 }
@@ -51,6 +55,14 @@ impl<'a> Command<'a> {
             Command::Test => {
                 ("AT", "OK")
             },
+            Command::Disconnect => {
+                ("AT", "OK+LOST")
+            },
+            Command::Reset => {
+                ("AT+RESET", "OK+RESET")
+            },
+            // AT+RSSI? - this could tell us whether we are connected, and the signal strength
+            // how to recieve values from the board - should we scrap the expected field?
             Command::SetName(name) => {
                 writeln!(cmd_buffer, "AT+NAME{}", name);
                 writeln!(expected_buffer, "OK+SetName:{}", name);
