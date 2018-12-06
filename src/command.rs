@@ -64,8 +64,8 @@ impl<'a> Command<'a> {
             // AT+RSSI? - this could tell us whether we are connected, and the signal strength
             // how to recieve values from the board - should we scrap the expected field?
             Command::SetName(name) => {
-                writeln!(cmd_buffer, "AT+NAME{}", name);
-                writeln!(expected_buffer, "OK+SetName:{}", name);
+                write!(cmd_buffer, "AT+NAME{}", name);
+                write!(expected_buffer, "OK+Set:{}", name);
                 (cmd_buffer.as_str(), expected_buffer.as_str())
             }
         };
