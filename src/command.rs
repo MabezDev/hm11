@@ -25,12 +25,14 @@ pub enum Command<'a> {
     Baud230400,
     /// Test AT Response
     Test,
-    /// Disconnect from current bluetooth connection
-    Disconnect,
+    // /// Disconnect from current bluetooth connection
+    // Disconnect,
     /// Restart the module
     Reset,
-    /// Discovery name
+    /// Discovery name - Max length 12 characters
     SetName(&'a str),
+    /// PIO1 pin mode, 0 - flashing (every 500ms) when disconnected, 1 low when disconnected
+    StatusPinMode(bool),
 }
 
 impl<'a> Command<'a> {
@@ -38,9 +40,10 @@ impl<'a> Command<'a> {
         where TXIF: serial::Write<u8>,
               RXIF: serial::Read<u8>
     {
-        let mut received: [u8; 16] = [0; 16]; // TODO find out max return length from hm11
-        let mut cmd_buffer: String<U128> = String::new();
-        let mut expected_buffer: String<U128> = String::new();
+        // HM11 max chars is 20
+        let mut received: [u8; 20] = [0; 20];
+        let mut cmd_buffer: String<U20> = String::new();
+        let mut expected_buffer: String<U20> = String::new();
 
         let (command, expected) = match self {
             Command::Baud9600 => ("AT+BAUD0", "OK+Set:0"),
@@ -55,34 +58,39 @@ impl<'a> Command<'a> {
             Command::Test => {
                 ("AT", "OK")
             },
-            Command::Disconnect => {
-                ("AT", "OK+LOST")
-            },
             Command::Reset => {
                 ("AT+RESET", "OK+RESET")
             },
-            // AT+RSSI? - this could tell us whether we are connected, and the signal strength
-            // how to recieve values from the board - should we scrap the expected field?
-            Command::SetName(name) => {
-                writeln!(cmd_buffer, "AT+NAME{}", name);
-                writeln!(expected_buffer, "OK+SetName:{}", name);
+            Command::StatusPinMode(mode) => {
+                write!(cmd_buffer, "AT+PIO1{}", *mode as u8);
+                write!(expected_buffer, "AT+Set:{}", *mode as u8);
                 (cmd_buffer.as_str(), expected_buffer.as_str())
             }
+            Command::SetName(name) => {
+                assert!(name.len() <= 12); // max name length
+                write!(cmd_buffer, "AT+NAME{}", name);
+                write!(expected_buffer, "OK+Set:{}", name);
+                (cmd_buffer.as_str(), expected_buffer.as_str())
+            }
+            // Command::Disconnect => {
+            //     ("AT", "OK+LOST")
+            // },
         };
 
-        for byte in command.as_bytes() {
-            block!(tx.write(*byte)).ok();
+        let cmd_bytes = command.as_bytes();
+        for i in 0..command.len() {
+            block!(tx.write(cmd_bytes[i])).ok();
         }
         
         let len = expected.len();
         for i in 0..len {
-            if let Some(byte) = block!(rx.read()).ok() {
+            let result = block!(rx.read());
+            if let Some(byte) = result.ok() {
                 received[i] = byte;
             } else {
                 // something went wrong
                 return Err(());
             }
-            
         }
 
 

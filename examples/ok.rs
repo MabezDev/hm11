@@ -14,12 +14,11 @@ extern crate panic_semihosting;
 extern crate hm11;
 
 extern crate stm32l432xx_hal as hal;
-// #[macro_use(block)]
-// extern crate nb;
 
 use cortex_m::asm;
 use hal::prelude::*;
 use hal::serial::Serial;
+use hal::delay::Delay;
 use hal::stm32l4::stm32l4x2;
 use rt::ExceptionFrame;
 use hm11::device::Hm11;
@@ -29,11 +28,12 @@ entry!(main);
 
 fn main() -> ! {
     let p = stm32l4x2::Peripherals::take().unwrap();
+    let cp = cortex_m::Peripherals::take().unwrap();
 
     let mut flash = p.FLASH.constrain();
     let mut rcc = p.RCC.constrain();
     let mut gpioa = p.GPIOA.split(&mut rcc.ahb2);
-    // let mut gpiob = p.GPIOB.split(&mut rcc.ahb2);
+    let mut gpiob = p.GPIOB.split(&mut rcc.ahb2);
 
     // clock configuration using the default settings (all clocks run at 8 MHz)
     let clocks = rcc.cfgr.freeze(&mut flash.acr);
@@ -52,8 +52,24 @@ fn main() -> ! {
     let serial = Serial::usart1(p.USART1, (tx, rx), 9_600.bps(), clocks, &mut rcc.apb2);
     let (mut tx, mut rx) = serial.split();
 
+    let mut bt_pwr = gpioa.pa11.into_push_pull_output(&mut gpioa.moder, &mut gpioa.otyper);
+    let mut delay = Delay::new(cp.SYST, clocks);
+
+    bt_pwr.set_low();
+    delay.delay_ms(500_u16);
+    bt_pwr.set_high();
+    for _ in 0..10 { // allow bt to power on
+        delay.delay_ms(500_u16);
+    }
+
+    let mut led = gpiob.pb3.into_push_pull_output(&mut gpiob.moder, &mut gpiob.otyper);
+
     let hm11 = Hm11::new();
     hm11.command(Command::Test, &mut tx, &mut rx).unwrap();
+    // hm11.command(Command::SetName("Mabez"), &mut tx, &mut rx).unwrap();
+    // hm11.command(Command::Reset, &mut tx, &mut rx).unwrap();
+
+    led.set_high();
 
 
     // if all goes well you should reach this breakpoint

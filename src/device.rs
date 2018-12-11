@@ -16,4 +16,9 @@ impl Hm11 {
     {
         cmd.send(tx, rx)
     }
+
+    /// reads the status pin of the hm11
+    pub fn is_connected() {
+        unimplemented!();
+    }
 }
