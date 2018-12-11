@@ -7,28 +7,25 @@
 #![no_std]
 
 extern crate cortex_m;
-#[macro_use(entry, exception)]
 extern crate cortex_m_rt as rt;
 extern crate nb;
 extern crate panic_semihosting;
 extern crate hm11;
 
-extern crate stm32l432xx_hal as hal;
-// #[macro_use(block)]
-// extern crate nb;
+extern crate stm32l4xx_hal as hal;
 
 use cortex_m::asm;
-use hal::prelude::*;
-use hal::serial::Serial;
-use hal::stm32l4::stm32l4x2;
-use rt::ExceptionFrame;
-use hm11::device::Hm11;
+use crate::hal::prelude::*;
+use crate::hal::serial::Serial;
+use crate::hal::stm32;
+use hm11::Hm11;
 use hm11::command::Command;
+use crate::rt::entry;
 
-entry!(main);
 
+#[entry]
 fn main() -> ! {
-    let p = stm32l4x2::Peripherals::take().unwrap();
+    let p = stm32::Peripherals::take().unwrap();
 
     let mut flash = p.FLASH.constrain();
     let mut rcc = p.RCC.constrain();
@@ -55,27 +52,18 @@ fn main() -> ! {
 
     // TRY using a different USART peripheral here
     // let serial = Serial::usart1(p.USART1, (tx, rx), 9_600.bps(), clocks, &mut rcc.apb2);
-    let (mut tx, mut rx) = serial.split();
+    let (tx, rx) = serial.split();
 
-    let hm11 = Hm11::new();
-    // hm11.command(Command::Reset, &mut tx, &mut rx).unwrap();
-    // hm11.command(Command::Reset, &mut tx, &mut rx).unwrap();
-    hm11.command(Command::SetName("MWatch"), &mut tx, &mut rx).unwrap();
+    let mut hm11 = Hm11::new(tx, rx);
+    // check presence with AT
+    hm11.command(Command::Test).unwrap();
+    // Set a new name
+    hm11.command(Command::SetName("MWatch")).unwrap();
+    // reset the module
+    hm11.command(Command::Reset).unwrap();
 
     // if all goes well you should reach this breakpoint
     asm::bkpt();
 
     loop {}
-}
-
-exception!(HardFault, hard_fault);
-
-fn hard_fault(ef: &ExceptionFrame) -> ! {
-    panic!("{:#?}", ef);
-}
-
-exception!(*, default_handler);
-
-fn default_handler(irqn: i16) {
-    panic!("Unhandled exception (IRQn = {})", irqn);
 }
