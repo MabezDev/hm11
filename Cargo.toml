@@ -2,6 +2,24 @@
 name = "hm11"
 version = "0.1.0"
 authors = ["Scott Mabin <MabezDev@gmail.com>"]
+description = "HM-11 Bluetooth AT driver crate"
+keywords = ["no-std", "hm11", "hm-11", "bluetooth", "embedded-hal"]
+categories = [
+    "embedded",
+    "hardware-support",
+    "no-std",
+]
+repository = "https://github.com/MabezDev/hm11"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+exclude = [
+	".travis.yml",
+	".gitignore",
+	"docs/",
+	"docs/*",
+    ".vscode/",
+    ".vscode/*",
+]
 edition = "2018"
 
 [dependencies]
