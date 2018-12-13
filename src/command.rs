@@ -1,5 +1,5 @@
 
-//! Commands
+//! AT Commands
 
 pub enum Command<'a> {
     /// 0 -------- 9600
@@ -28,4 +28,8 @@ pub enum Command<'a> {
     Reset,
     /// Discovery name
     SetName(&'a str),
+    /// System LED function 
+    /// false: when disconnected alternates output
+    /// true: when disconncted output is low 
+    SystemLedMode(bool),
 }

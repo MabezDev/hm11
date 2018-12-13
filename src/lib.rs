@@ -1,25 +1,24 @@
-//! Hm11 device
+//! HM-11 device crate
+//! 
+//! Configure a HM-11 bluetooth module with AT commands over a serial interface.
 #![no_std]
-
-extern crate embedded_hal as hal;
-extern crate heapless;
-#[macro_use(block)]
-extern crate nb;
 
 pub mod command;
 
 use crate::command::Command;
-use crate::hal::serial;
+use embedded_hal::serial;
+use embedded_hal::blocking::delay::DelayMs;
 use heapless::String;
 use heapless::consts::*;
 use core::fmt::Write;
+use nb::block;
 
 pub struct Hm11<TX, RX> {
     tx: TX,
     rx: RX,
-    received : [u8; 16], // TODO find out max return length from hm11
-    cmd_buffer: String<U128>,
-    expected_buffer: String<U128>
+    received : [u8; 32], // TODO find out max return length from hm11
+    cmd_buffer: String<U32>,
+    expected_buffer: String<U32>
 }
 
 impl<TX, RX> Hm11<TX, RX> 
@@ -31,17 +30,32 @@ where TX: serial::Write<u8>,
         Self {
             tx: tx,
             rx: rx,
-            received: [0u8; 16],
+            received: [0u8; 32],
             cmd_buffer: String::new(),
             expected_buffer: String::new(),
         }
     }
 
+    /// Release the serial interfaces
     pub fn release(self) -> (TX, RX) {
         (self.tx, self.rx)
     }
 
-    pub fn command(&mut self, cmd: Command) -> Result<(), ()>
+    /// Send an AT command to the module
+    pub fn send(&mut self, cmd: Command) -> Result<(), ()> {
+        self.command(cmd)
+    }
+    
+    /// Usefull when sending consecutive commands without RTS and CTS connected.
+    pub fn send_with_delay<DELAY>(&mut self, cmd: Command, delay: &mut DELAY) -> Result<(), ()> 
+    where DELAY: DelayMs<u8>
+    {
+        delay.delay_ms(20);
+        self.command(cmd)
+    }
+
+    /// Handles transporting the command to the module, and verifying the response from the module.
+    fn command(&mut self, cmd: Command) -> Result<(), ()>
     {
         // reset buffers
         self.cmd_buffer.clear();
@@ -71,6 +85,13 @@ where TX: serial::Write<u8>,
                 write!(self.cmd_buffer, "AT+NAME{}", name).unwrap();
                 write!(self.expected_buffer, "OK+Set:{}", name).unwrap();
                 (self.cmd_buffer.as_str(), self.expected_buffer.as_str())
+            },
+            Command::SystemLedMode(mode) => {
+                if mode {
+                    ("AT+PIO11", "OK+Set:1")
+                } else {
+                    ("AT+PIO10", "OK+Set:0")
+                }
             }
         };
 

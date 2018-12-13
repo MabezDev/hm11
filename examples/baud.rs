@@ -44,11 +44,11 @@ fn main() -> ! {
 
     let mut hm11 = Hm11::new(tx, rx);
     // check presence with AT
-    hm11.command(Command::Test).unwrap();
+    hm11.send(Command::Test).unwrap();
     // Set a new baud
-    hm11.command(Command::Baud115200).unwrap();
+    hm11.send(Command::Baud115200).unwrap();
     // reset the module
-    hm11.command(Command::Reset).unwrap();
+    hm11.send(Command::Reset).unwrap();
     
     // let (usart2, (tx, rx)) = hm11.release().0.free(); // TODO the hal needs a way to recombine back to serial
     // let serial = Serial::usart2(usart2, (tx, rx), 115200.bps(), clocks, &mut rcc.apb1r1);

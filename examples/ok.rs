@@ -56,11 +56,11 @@ fn main() -> ! {
 
     let mut hm11 = Hm11::new(tx, rx);
     // check presence with AT
-    hm11.command(Command::Test).unwrap();
+    hm11.send(Command::Test).unwrap();
     // Set a new name
-    hm11.command(Command::SetName("MWatch")).unwrap();
+    hm11.send(Command::SetName("MWatch")).unwrap();
     // reset the module
-    hm11.command(Command::Reset).unwrap();
+    hm11.send(Command::Reset).unwrap();
 
     // if all goes well you should reach this breakpoint
     asm::bkpt();
