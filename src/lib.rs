@@ -43,6 +43,10 @@ where TX: serial::Write<u8>,
 
     pub fn command(&mut self, cmd: Command) -> Result<(), ()>
     {
+        // reset buffers
+        self.cmd_buffer.clear();
+        self.expected_buffer.clear();
+
         let (command, expected) = match cmd {
             Command::Baud9600 => ("AT+BAUD0", "OK+Set:0"),
             Command::Baud19200 => ("AT+BAUD1", "OK+Set:1"),
