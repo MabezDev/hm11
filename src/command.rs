@@ -32,4 +32,8 @@ pub enum Command<'a> {
     /// false: when disconnected alternates output
     /// true: when disconncted output is low 
     SystemLedMode(bool),
+    /// Sleep the module
+    Sleep,
+    /// Notification information over the uart
+    Notify(bool)
 }

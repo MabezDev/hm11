@@ -92,6 +92,14 @@ where TX: serial::Write<u8>,
                 } else {
                     ("AT+PIO10", "OK+Set:0")
                 }
+            },
+            Command::Sleep => {
+                ("AT+SLEEP", "OK+SLEEP")
+            },
+            Command::Notify(val) => {
+                write!(self.cmd_buffer, "AT+NOTI{}", val as u8).unwrap();
+                write!(self.expected_buffer, "OK+Set:{}", val as u8).unwrap();
+                (self.cmd_buffer.as_str(), self.expected_buffer.as_str())
             }
         };
 
